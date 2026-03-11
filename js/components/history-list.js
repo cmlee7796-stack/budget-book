@@ -15,7 +15,7 @@ function addHistoryListEventListener() {
 
     const { dateid, itemid } = element.dataset;
 
-    const isSuccess = removeHistory(dateid, itemid);
+    const isSuccess = removeHistory(Number(dateid), Number(itemid));
     if (!isSuccess) {
       alert("소비내역 삭제에 실패했습니다.");
       return;
@@ -38,38 +38,51 @@ export function renderHistoryList() {
 
   $sectionHistory.innerHTML = store.dateList
     .map(({ date, id: dateId }) => {
-      const detail = store.detailList[dateId];
+      const detail = store.detailList?.[dateId] || [];
+      
       if (!detail?.length) return "";
 
-      return `<article class="history-per-day">
-      <p class="history-date">2021년 12월 1일</p>
-      <section class="history-item">
+      const detailItems = detail
+        .sort((a,b) => b.id -a.id)
+        .map((item) => {
+          const time = new Date(item.createAt).toLocaleTimeString("ko-KR", {
+            timeStyle : "short",
+            hourCycle : "h24",
+          });
+
+          return `<section class="history-item">
         <section class="history-item-column">
-          <div class="create-at">10:30</div>
+          <div class="create-at">${time}</div>
           <div class="history-detail">
             <div class="history-detail-row history-detail-title">
-              <p>아이스 아메리카노</p>
+              <p>${item.description}</p>
             </div>
             <div class="history-detail-row history-detail-subtitle">
-              <p>카페</p>
+              <p>${item.category}</p>
               <p>
-                1000000
+                ${item.amount.toLocaleString()}
                 <span>원</span>
               </p>
             </div>
           </div>
-          <div class="delete-section">
-            <button class="delete-button">🗑</button>
+          <div class="delete-section" >
+            <button class="delete-button" data-dateid="${dateId}" data-itemid="${item.id}">🗑</button>
           </div>
         </section>
         <section class="history-item-caption">
           <p>
             <span>남은 자산</span>
-            <span>300000</span>
+            <span>${item.fundsAtTheTime.toLocaleString()}</span>
             <span>원</span>
           </p>
         </section>
-      </section>
+      </section>`;
+        })
+        .join("");
+
+      return `<article class="history-per-day">
+      <p class="history-date">${date}</p>
+      ${detailItems}
     </article>`;
     })
     .join("");
